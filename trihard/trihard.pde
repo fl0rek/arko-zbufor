@@ -55,12 +55,10 @@ void draw() {
     rD -= 2*rdx;
   }
   int yspan = y1 - y0;
-  println(yspan);
   for(int y = y0+1; y <= y1; y++) {
     int lc = ((y - y1) *c0 + (y0 - y) *c1)/yspan;
     int rc = ((y - y1) *c0 + (y0 - y) *c2)/yspan;
-    //println(lx, rx);
-    //line(lx, y, rx, y);
+
     strokeLine(lx, rx, y, lc, rc);
     
     lD += 2*ldx;
