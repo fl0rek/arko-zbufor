@@ -1,0 +1,14 @@
+#!/usr/bin/expect -f
+
+spawn java -jar Mars4_5.jar nc beta.asm
+expect "triangleNum width height = "
+send "1\r500\r400\r"
+expect "h x0 y0 x1 y1 x2 y2 = "
+send "1\r100\r200\r300\r400\r400\r350\r"
+expect "r g b = "
+send "100\r100\r100\r"
+expect "exit OK"
+close
+
+system feh -Z out.bmp
+
