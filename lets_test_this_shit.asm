@@ -44,8 +44,22 @@ bmpInfoHeader_importantColours:
 	.word	0 # ???!
 bmpInfoHeader_end:
 
+
 bitmap_len:
 	.word	0
+store_x0:
+	.word	0
+store_x1:
+	.word	0
+store_x2:
+	.word	0
+store_y0:
+	.word	0
+store_y1:
+	.word	0
+store_y2:
+	.word	0
+
 
 prompt1:
 	.asciiz "triangleNum width height = \n"
@@ -54,6 +68,11 @@ prompt2:
 prompt3:
 	.asciiz "r g b = \n"
 
+
+msg_l:
+	.asciiz "l\n"
+msg_r:
+	.asciiz "r\n"
 msg_exitOK:
 	.asciiz "exit OK\n"
 msg_endl:
@@ -225,6 +244,8 @@ output_filename:
 	bltz	$v0, abort_ioError
 .end_macro
 
+#pay no regard to preserving registers,
+#we're bailing out anyway
 abort_ioError:
 	la	$a0, errorMsg_io
 	j abort_print
@@ -255,6 +276,13 @@ _main:
 .eqv	width	$s6
 .eqv	height	$s5
 
+.eqv	x0	$t0
+.eqv	y0	$t1
+.eqv	x1	$t2
+.eqv	y1	$t3
+.eqv	x2	$t4
+.eqv	y2	$t5
+
 allocBitmap:
 	mulu	$s4, $s6, bpp
 	addi	$s4, $s4, 31
@@ -263,7 +291,7 @@ allocBitmap:
 .eqv	row_len	$s4
 
 
-	mult	row_len, $s5
+	mult	row_len, height
 	mflo	$a0
 	addu	$a0, $a0, $a0
 	li	$v0, 9
@@ -322,11 +350,11 @@ drawTriangles_read:
 	read_int($t5) #x2
 #maybe something more fancy than (f)unrolled bubble sort?
 drawTriangles_sortStart:
-	bge $t3, $t1, drawTriangles_no12swap
+	ble $t3, $t1, drawTriangles_no12swap
 	xchg($t1 $t3)
 	xchg($t0 $t2)
 drawTriangles_no12swap:
-	bge $t5, $t3, drawTriangles_no23swap
+	ble $t5, $t3, drawTriangles_no23swap
 	xchg($t3 $t5)
 	xchg($t2 $t4)
 	j drawTriangles_sortStart
@@ -336,18 +364,6 @@ drawTriangles_no23swap:
 	read_int($t6) # R
 	read_int($t7) # G
 	read_int($t8) # B
-
-	sll	$t8, $t8, 8
-	or	$t7, $t7, $t8
-	sll	$t7, $t7, 8
-	or	$t6, $t6, $t6
-	sra	$t7, $t7, 8
-	sra	$t8, $t8, 8
-
-	# t6 = RG
-	# t7 = GB
-	# t8 = B
-
 
 	println
 	printint($t0)
@@ -368,68 +384,7 @@ drawTriangles_no23swap:
 	mflo	$s2
 .end_macro
 
-.macro drawline(%from %to)
-println
-println
-printint($s2)
-println
-printint(%from)
-printspace
-printint(%to)
-println
-println
-
-drawline_prologue:
-	mthi	%from
-	mtlo	%to
-
-drawline_begin:
-	addu	$s2, $s2, bitmap
-	addu	%from, %from, $s2
-	addu	%to, %to, $s2
-	subu	$s2, $s2, bitmap
-
-printint(bitmap)
-printspace
-printint(%from)
-printspace
-printint(%to)
-println
-
-drawline_beginDraw:
-	bgt	%from, %to, drawline_epilogue
-	j drawline_fuck_alignment
-
-	andi	$at, %from, 1
-	bnez	$at, drawline_unaligned
-
-	sh	$t6, (%from)
-	sb	$t8, 2(%from)
-	j 	drawline_nextPix
-drawline_unaligned:
-	sb	$t6, (%from)
-	sh	$t7, 1(%from)
-drawline_nextPix:
-	addiu	%from, %from, 3
-	j	drawline_beginDraw
-
-drawline_fuck_alignment:
-	addi	$t6, $zero, 121
-printint(bitmap)
-printint(%from)
-printint($t6)
-	sb	$t6, 1(%from)
-	sb	$t6, 2(%from)
-	sb	$t6, 3(%from)
-	#dumpmem(bitmap)
-	j	drawline_nextPix
-
-drawline_epilogue:
-	mfhi	%from
-	mflo	%to
-.end_macro
-
-	li	$k0, 0 # swap left
+	li	$k0, 1 # swap left
 
 	bge	$t2, $t0, drawTriangles_ld_one
 	li	$s6, -1
@@ -451,38 +406,69 @@ drawTriangles_rd_rdx_done:
 
 
 	beqz	$k0, drawTriangles_init_swap_right
-	subu	$ra, $t3, $t1
-	subu	$fp, $t5, $t1
+	subu	$t7, $t3, $t1
+	subu	$t8, $t5, $t1
 	j	drawTriangles_init_swap_done
 drawTriangles_init_swap_right:
-	subu	$ra, $t3, $t1
-	subu	$fp, $t5, $t1
+	subu	$t7, $t3, $t1
+	subu	$t8, $t5, $t1
 drawTriangles_init_swap_done:
 
 	addu	$a0, $a2, $a2
-	subu	$a0, $a0, $ra
+	subu	$a0, $a0, $t7
 
 	addu	$a1, $a3, $a3
-	subu	$a1, $a1, $fp
+	subu	$a1, $a1, $t8
 
 	move	$v0, $t0
 	move	$v1, $t0
 
-	addu	$fp, $fp, $fp
-	addu	$ra, $ra, $ra
+	addu	$t8, $t8, $t8
+	addu	$t7, $t7, $t7
+
 	addu	$a2, $a2, $a2
 	addu	$a3, $a3, $a3
+
+	subu	$t8, $0, $t8
+	subu	$t7, $0, $t7
+
+.macro debug_dump
+	printseparator
+	println
+	println
+	println
+	printspace
+	printint($t6)
+
+	println
+	printint($v0)
+	printspace
+	printint($v1)
+
+	println
+	printint($a0)
+	printspace
+	printint($a1)
+
+	println
+	printint($a2)
+	printspace
+	printint($a3)
+
+	println
+	printint($t7)
+	printspace
+	printint($t8)
+	println
+.end_macro
 
 .macro lD_loop
 lD_loop_begin:
 	blez	$a0, lD_loop_end
-	#println
-	#printspace
-	#printint($a1)
-	#printspace
-	#printint($a2)
 	addu	$v0, $v0, $s5
-	subu	$a0, $a0, $ra
+	subu	$a0, $a0, $t7
+	println_preserve(msg_l)
+	debug_dump
 	j	lD_loop_begin
 lD_loop_end:
 .end_macro
@@ -490,36 +476,29 @@ lD_loop_end:
 .macro rD_loop
 rD_loop_begin:
 	blez	$a1, rD_loop_end
-	#println
-	#printspace
-	printint($a1)
 	addu	$v1, $v1, $s6
-	subu	$a1, $a1, $fp
+	subu	$a1, $a1, $t8
+	println_preserve(msg_r)
+	debug_dump
 	j	rD_loop_begin
 rD_loop_end:
 .end_macro
 
-	lD_loop
-	rD_loop
+	#lD_loop # DBG
+	#rD_loop # DBG
+
 drawTriangles_mainLoop1:
-	move	$k1, $t1
+	move	$t6, $t1
+
 drawTriangles_mainLoop1_begin:
-	bge	$k1, $t3, drawTriangles_pivot
+	ble	$t6, $t3, drawTriangles_pivot
 
 	printseparator
-	println
-	println
-	println
-	printspace
-	printint($k1)
-	#printint($s2)
-	println
-	printint($v0)
-	printspace
-	printint($v1)
+	printseparator
+	debug_dump
 
 
-	#rowload($k1)
+	#rowload($t6)
 	#drawline($v1 $v0)
 #j drawTriangles_mainLoop2_exit # DBG
 
@@ -528,87 +507,11 @@ drawTriangles_mainLoop1_begin:
 	addu	$a1, $a1, $a3
 	rD_loop
 
-	addi	$k1, $k1, 1
+	addi	$t6, $t6, -1
 	j	drawTriangles_mainLoop1_begin
 
 drawTriangles_pivot:
-	printseparator
-j drawTriangles_mainLoop2_exit # DBG
-	beqz	$k0, drawTriangles_pivot_swapRight
-
-	subu	$ra, $t5, $t3
-	bge	$t4, $t2, drawTriangles_pivot_swapLeft_miniusOne
-	li	$s6, 1
-	subu	$a2, $t2, $t4
-	j	drawTriangles_pivot_swapLeft_done
-drawTriangles_pivot_swapLeft_miniusOne:
-	li	$s6, -1
-	subu	$a2, $t4, $t2
-drawTriangles_pivot_swapLeft_done:
-	j	drawTriangles_pivot_done
-
-drawTriangles_pivot_swapRight:
-	subu	$fp, $t5, $t3
-	bge	$t4, $t2, drawTriangles_pivot_swapRight_miniusOne
-	li	$s5, -1
-	subu	$a3, $t2, $t4
-	j	drawTriangles_pivot_swapRight_done
-drawTriangles_pivot_swapRight_miniusOne:
-	li	$s5, 1
-	subu	$a3, $t2, $t4
-drawTriangles_pivot_swapRight_done:
-drawTriangles_pivot_done:
-	println
-drawTriangles_mainLoop2:
-drawTriangles_mainLoop2_begin:
-	bge	$k1, $t5, drawTriangles_mainLoop2_exit
-	rowload($k1)
-
-	println
-	printint($k1)
-	printspace
-	printint($s2)
-	println
-	printint($v0)
-	printspace
-	printint($v1)
-
-
-	drawline($v1 $v0)
-
-	addu	$a0, $a0, $a2
-	lD_loop
-	addu	$a1, $a1, $a3
-	rD_loop
-
-	addi	$k1, $k1, 1
-	j	drawTriangles_mainLoop2_begin
-drawTriangles_mainLoop2_exit:
-
 
 drawTriangles_epilogue:
-
-writeEverything:
-writeEverything_actualWriting:
-	openfile(output_filename)
-	la	$t0, bmpInfoHeader_end
-	la	$t1, bmpHeader
-	subu	$t0, $t0, $t1
-
-	la	$a1, bmpHeader
-	writefile($t0)
-
-	la	$a1, bitmap_len
-	lw	$s2, ($a1)
-
-	println
-	println
-	printint(bitmap)
-	println
-	move	$a1, bitmap
-	writefile($s2)
-
-	closefile
-
-writeEverything_end:
+	printseparator
 	exit

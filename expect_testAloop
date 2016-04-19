@@ -1,0 +1,25 @@
+#!/usr/bin/expect -f
+
+
+for {set i 0} {$i < 100} {incr i 5} {
+	spawn java -jar Mars4_5.jar nc forReal.asm
+	expect "triangleNum width height = "
+	send "1\r100\r100\r"
+	send_user "#### $i"
+
+	expect "h x0 y0 x1 y1 x2 y2 = "
+	send "${i}\r"
+	send "30\r$i\r"
+	send "80\r$i\r"
+	send "$i\r50\r"
+
+	expect "r g b = "
+	send "${i}0\r0\r0\r"
+	expect "exit OK"
+	close
+	spawn -ignore HUP feh out.bmp --force-aliasing --auto-zoom
+}
+
+
+
+exit

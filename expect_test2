@@ -1,0 +1,18 @@
+#!/usr/bin/expect -f
+
+spawn java -jar Mars4_5.jar nc forReal.asm
+expect "triangleNum width height = "
+send "1\r10\r10\r"
+expect "h x0 y0 x1 y1 x2 y2 = "
+send "1\r"
+send "1\r9\r"
+send "1\r1\r"
+send "8\r6\r"
+expect "r g b = "
+send "100\r100\r100\r"
+expect "exit OK"
+close
+
+
+spawn -ignore HUP feh out.bmp --force-aliasing --auto-zoom
+exit
