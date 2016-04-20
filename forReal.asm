@@ -589,17 +589,16 @@ printseparator
 printseparator
 	subu	ldy, y1, y2
 
+	addu	lx, $0, x1
 	bge	x1, x2, drawTriangles_pivot_swapLeft_minusOne
 drawTriangles_pivot_swapLeft:
 	ori	ld_, $0, 1
 	subu	ldx, x2, x1
-	addu	lx, $0, x1
 	j	drawTriangles_pivot_swapLeft_done
 
 drawTriangles_pivot_swapLeft_minusOne:
 	ori	ld_, $0, -1
 	subu	ldx, x1, x2
-	addu	lx, $0, x1
 drawTriangles_pivot_swapLeft_done:
 	addu 	lD_, ldx, ldx
 	addu 	lD_, lD_, ldy
@@ -614,16 +613,15 @@ drawTriangles_pivot_swapRight:
 printseparator
 	subu	rdy, y1, y2
 
+	addu	rx, $0, x1
 	bge	x1, x2, drawTriangles_pivot_swapRight_miniusOne
 	ori	rd_, $0, 1
 	subu	rdx, x2, x1
-	addu	rx, $0, x1
 	j	drawTriangles_pivot_swapRight_done
 
 drawTriangles_pivot_swapRight_miniusOne:
 	ori	rd_, $0, -1
 	subu	rdx, x1, x2
-	add	rx, $0, x1
 drawTriangles_pivot_swapRight_done:
 	addu 	rD_, rdx, rdx
 	addu 	rD_, rD_, rdy
@@ -663,10 +661,10 @@ drawTriangles_currentTriangleDone:
 	xor	$29, $29, $29
 	xor	$30, $30, $30
 
-	ori	h, $0, 999
-	drawline(y0, x0, x0)
-	drawline(y1, x1, x1)
-	drawline(y2, x2, x2)
+	#ori	h, $0, 999
+	#drawline(y0, x0, x0)
+	#drawline(y1, x1, x1)
+	#drawline(y2, x2, x2)
 
 	j drawTriangles_anyLeft
 drawTriangles_epilogue:
