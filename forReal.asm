@@ -332,7 +332,6 @@ drawTriangles_rd_rdx_done:
 .eqv	ldy	$t7
 .eqv	rdy	$t8
 
-	#TODO: check for  ldy, rdy == 0
 .eqv	swap_left	$k0
 
 	xor	$28, $28, $28
@@ -359,7 +358,7 @@ drawTriangles_rxCheck_rdyZero:
 	read_int($30) # B
 
 	beqz	swap_left, drawTriangles_init_swap_right
-	subu	rdy, y2, y0 #TODO: this still may be fishy
+	subu	rdy, y2, y0
 	subu	ldy, y1, y0
 	j	drawTriangles_init_swap_done
 drawTriangles_init_swap_right:
